@@ -7,4 +7,6 @@ PowerShell version 3 or higher is recommended.
 
 Online blog documentation: http://www.powershelladmin.com/wiki/Merge_CSV_files_or_PSObjects_in_PowerShell
 
+It's also published to the PowerShell Gallery: https://www.powershellgallery.com/packages/MergeCsv/
+
 I will add more information here later, but for now check out the online docs which are quite comprehensive.
