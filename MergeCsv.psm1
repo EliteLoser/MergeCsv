@@ -1,28 +1,52 @@
-﻿<#
-.SYNOPSIS
-Merges an arbitrary amount of CSV files based on an ID column or several combined ID columns.
-Also works on custom PowerShell objects, with the InputObject parameter.
+#requires -version 3
 
-Copyright Joakim Svendsen (C) 2014-2016
+
+<#
+.SYNOPSIS
+Merges an arbitrary amount of CSV files or PowerShell objects based on an ID column or
+several combined ID columns. Works on custom PowerShell objects with the InputObject parameter.
+
+.DESCRIPTION
+Slapping parentheses around Import-Csv like, say, "-InputObject (ipcsv csvfile.csv), $objectHere"
+is good for a mix of objects and CSV files.
+
+PowerShell version 3 or higher is needed.
+
+Copyright Joakim Borger Svendsen (C) 2014-2017
 All rights reserved.
+Svendsen Tech
 
 MIT license.
 
 Online documentation:
 http://www.powershelladmin.com/wiki/Merge_CSV_files_or_PSObjects_in_PowerShell
 
-.PARAMETER Id
+GitHub:
+https://github.com/EliteLoser/MergeCsv/
+
+The PowerShell Gallery:
+https://www.powershellgallery.com/packages/MergeCsv/
+
+.PARAMETER Identity
 Shared ID property/header (multiple supported).
+
 .PARAMETER Path
 CSV files to process.
+
 .PARAMETER InputObject
 Custom PowerShell objects to process.
+
 .PARAMETER Delimiter
 Optional delimiter that's used if you pass file paths (default is a comma).
+
 .PARAMETER Separator
 Optional multi-ID column string separator (default "#Merge-Csv-Separator#").
+
 .PARAMETER AllowDuplicates
 Allow and aggregate duplicate entries (IDs) in the order they occur.
+
+.PARAMETER IncludeAliasProperty
+Include alias properties in addition to note properties.
 
 .EXAMPLE
 ipcsv users.csv | ft -AutoSize
@@ -113,20 +137,46 @@ function Merge-Csv {
     )]
     param(
         # Shared ID column(s)/header(s).
-        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string[]] $Id,
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [String[]] $Identity,
+        
         # CSV files to process.
-        [Parameter(ParameterSetName='Files',Mandatory=$true)][ValidateScript({Test-Path $_ -PathType Leaf})][string[]] $Path,
+        [Parameter(ParameterSetName='Files',Mandatory=$true)]
+        [ValidateScript({Test-Path $_ -PathType Leaf})]
+        [String[]] $Path,
+        
         # Custom PowerShell objects to process.
-        [Parameter(ParameterSetName='Objects',Mandatory=$true)][psobject[]] $InputObject,
+        [Parameter(ParameterSetName='Objects',Mandatory=$true)]
+        [PSObject[]] $InputObject,
+        
         # Optional delimiter that's used if you pass file paths (default is a comma).
-        [Parameter(ParameterSetName='Files')][string] $Delimiter = ',',
+        [Parameter(ParameterSetName='Files')]
+        [String] $Delimiter = ',',
+
         # Optional multi-ID column string separator (default "#Merge-Csv-Separator#").
-        [string] $Separator = '#Merge-Csv-Separator#',
+        [String] $Separator = '#Merge-Csv-Separator#',
+        
         # Allow duplicate entries (IDs).
-        [switch] $AllowDuplicates)
+        [Switch] $AllowDuplicates,
+        
+        # Include alias properties.
+        [Switch] $IncludeAliasProperty)
     # v1.4 as a module - 2016-10-28 - adding module format prerequisites, cleaning up redundant code
     # v1.4 - 2016-09-16 - Added support for handling duplicate IDs.
-    [psobject[]] $CsvObjects = @()
+    # v1.5. Forgot to make a note here, see wiki.
+    # v1.6 - Allowing duplicates, see wiki.
+    # v1.7 - 2017-09-13 - Adding -IncludeAliasProperty parameter.
+    #                     Non-default to not break old stuff people might have.
+    #                     Id parameter changed to full form: Identity.
+    [String[]] $PropertyTypes = @()
+    if ($IncludeAliasProperty) {
+        $PropertyTypes = @("NoteProperty", "AliasProperty")
+    }
+    else {
+        $PropertyTypes = @("NoteProperty")
+    }
+    [PSObject[]] $CsvObjects = @()
     if ($PSCmdlet.ParameterSetName -eq 'Files') {
         $CsvObjects = foreach ($File in $Path) {
             ,@(Import-Csv -Delimiter $Delimiter -Path $File)
@@ -137,31 +187,31 @@ function Merge-Csv {
     }
     $Headers = @()
     foreach ($Csv in $CsvObjects) {
-        $Headers += , @($Csv | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)
+        $Headers += , @($Csv | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name)
     }
     $Counter = 0
     foreach ($h in $Headers) {
         $Counter++
-        foreach ($Column in $Id) {
+        foreach ($Column in $Identity) {
             if ($h -notcontains $Column) {
                 Write-Error "Headers in object/file $Counter don't include $Column. Exiting."
                 return
             }
         }
     }
-    $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Id -notcontains $_ })
+    $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Identity -notcontains $_ })
     if ($HeadersFlatNoShared.Count -ne @($HeadersFlatNoShared | Sort-Object -Unique).Count) {
         Write-Error "Some headers are shared. Are you just looking for '@(ipcsv csv1) + @(ipcsv csv2) | Export-Csv ...'?`nTo remove duplicate (between the files to merge) headers from a CSV file, Import-Csv it, pass it to Select-Object, and omit the duplicate header(s)/column(s).`nExiting."
         return
     }
     $SharedColumnHashes = @()
-    $SharedColumnCount = $Id.Count
+    $SharedColumnCount = $Identity.Count
     $Counter = 0
     foreach ($Csv in $CsvObjects) {
         $SharedColumnHashes += @{}
         $Csv | ForEach-Object {
             $CurrentID = $(for ($i = 0; $i -lt $SharedColumnCount; $i++) {
-                $_ | Select-Object -ExpandProperty $Id[$i] -EA SilentlyContinue
+                $_ | Select-Object -ExpandProperty $Identity[$i] -EA SilentlyContinue
             }) -join $Separator
             if (-not $SharedColumnHashes[$Counter].ContainsKey($CurrentID)) {
                 $SharedColumnHashes[$Counter].Add($CurrentID, @($_ | Select-Object -Property $Headers[$Counter]))
@@ -185,13 +235,13 @@ function Merge-Csv {
                 Write-Verbose "Key: $Key, Counter: $Counter, InnerCounter: $InnerCounter"
                 $Obj = New-Object -TypeName PSObject
                 if ($SharedColumnHashes[$InnerCounter].ContainsKey($Key)) {
-                    foreach ($Header in $Headers[$InnerCounter] | Where-Object { $Id -notcontains $_ }) {
+                    foreach ($Header in $Headers[$InnerCounter] | Where-Object { $Identity -notcontains $_ }) {
                         Add-Member -InputObject $Obj -MemberType NoteProperty -Name $Header -Value ($SharedColumnHashes[$InnerCounter].$Key | Select-Object $Header)
                     }
                 }
                 else {
                     foreach ($Header in $Headers[$Counter]) {
-                        if ($Id -notcontains $Header) {
+                        if ($Identity -notcontains $Header) {
                             Add-Member -InputObject $Obj -MemberType NoteProperty -Name $Header -Value ($SharedColumnHashes[$Counter].$Key | Select-Object $Header)
                         }
                     }
@@ -206,8 +256,8 @@ function Merge-Csv {
                     $Result.$Key = $Obj
                 }
                 else {
-                    foreach ($Property in @($Obj | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) {
-                        if (-not ($Result.$Key | Get-Member -MemberType NoteProperty -Name $Property)) {
+                    foreach ($Property in @($Obj | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name)) {
+                        if (-not ($Result.$Key | Get-Member -MemberType $PropertyTypes -Name $Property)) {
                             Add-Member -InputObject $Result.$Key -MemberType NoteProperty -Name $Property -Value $Obj.$Property #-EA SilentlyContinue
                         }
                     }
@@ -227,8 +277,8 @@ function Merge-Csv {
     }
     #$Global:Result = $Result
     $Counter = 0
-    [hashtable[]] $SharedHeadersNoDuplicate = $Id | ForEach-Object {
-        @{n="$($Id[$Counter])";e=[scriptblock]::Create("(`$_.Name -split ([regex]::Escape('$Separator')))[$Counter]")}
+    [hashtable[]] $SharedHeadersNoDuplicate = $Identity | ForEach-Object {
+        @{n="$($Identity[$Counter])";e=[scriptblock]::Create("(`$_.Name -split ([regex]::Escape('$Separator')))[$Counter]")}
         $Counter++
     }
     [hashtable[]] $HeaderPropertiesNoDuplicate = $HeadersFlatNoShared | ForEach-Object {
@@ -244,7 +294,7 @@ function Merge-Csv {
             # Latching on support for duplicate objects. Insanely inefficient.
             # Variable for the count of duplicates we find. Initialize to 1 for each array of PSobjects for each ID.
             $MaxDuplicateCount = 1
-            foreach ($Title in $_.Value | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name) {
+            foreach ($Title in $_.Value | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name) {
                 $Count = @($_.Value.$Title).Count
                 # find max count for this instance (if at all higher than 1)
                 # duplicates are processed in the order they occur
@@ -257,7 +307,7 @@ function Merge-Csv {
                 # Add ID(s) once to each object.
                 $Obj = $null
                 $Obj = New-Object -TypeName PSObject
-                foreach ($TempID in $Id) {
+                foreach ($TempID in $Identity) {
                     Add-Member -InputObject $Obj -MemberType NoteProperty -Name $TempID -Value $_.Name
                 }
                 foreach ($NumHeader in 0..($HeadersFlatNoSharedCount-1)) {
@@ -270,7 +320,7 @@ function Merge-Csv {
                     }
                     Add-Member -InputObject $Obj -MemberType NoteProperty -Name $HeadersFlatNoShared[$NumHeader] -Value $Value
                 }
-                $Obj | Select-Object -Property ($Id + $HeadersFlatNoShared)
+                $Obj | Select-Object -Property ($Identity + $HeadersFlatNoShared)
             }
         }
     }
