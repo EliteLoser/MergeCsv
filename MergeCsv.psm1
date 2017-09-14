@@ -169,6 +169,10 @@ function Merge-Csv {
     # v1.7 - 2017-09-13 - Adding -IncludeAliasProperty parameter.
     #                     Non-default to not break old stuff people might have.
     #                     Id parameter changed to full form: Identity.
+    # v1.7.0.1 - 2017-09-14 - Empty strings instead of bullshit objects. wtf was I thinking.
+    #      Now I have to decide if I manipulate the IDs, possibly "Header1: Value1. Header2: Value2."?
+    #      with the title as "Header1. Header2." But periods aren't unique, so I don't know what else
+    #      to do right now than keep the silly, presumed unique separator string.
     [String[]] $PropertyTypes = @()
     if ($IncludeAliasProperty) {
         $PropertyTypes = @("NoteProperty", "AliasProperty")
@@ -316,7 +320,7 @@ function Merge-Csv {
                     }
                     catch {
                         Write-Verbose "Caught out of bounds in array."
-                        $Value = '' | Select-Object -Property $HeadersFlatNoShared[$NumHeader]
+                        $Value = '' #| Select-Object -Property $HeadersFlatNoShared[$NumHeader]
                     }
                     Add-Member -InputObject $Obj -MemberType NoteProperty -Name $HeadersFlatNoShared[$NumHeader] -Value $Value
                 }
