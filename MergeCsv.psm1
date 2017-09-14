@@ -173,6 +173,8 @@ function Merge-Csv {
     #      Now I have to decide if I manipulate the IDs, possibly "Header1: Value1. Header2: Value2."?
     #      with the title as "Header1. Header2." But periods aren't unique, so I don't know what else
     #      to do right now than keep the silly, presumed unique separator string.
+    # v1.7.0.2 - 2017-09-14 - Found a good way to handle multiple IDs with regards to the
+    #      presentation aspect! So clever it almost hurts - that's how it feels now anyway.
     [String[]] $PropertyTypes = @()
     if ($IncludeAliasProperty) {
         $PropertyTypes = @("NoteProperty", "AliasProperty")
@@ -311,8 +313,10 @@ function Merge-Csv {
                 # Add ID(s) once to each object.
                 $Obj = $null
                 $Obj = New-Object -TypeName PSObject
+                $IDSplitCounter = 0
                 foreach ($TempID in $Identity) {
-                    Add-Member -InputObject $Obj -MemberType NoteProperty -Name $TempID -Value $_.Name
+                    Add-Member -InputObject $Obj -MemberType NoteProperty -Name $TempID -Value @($_.Name -split [Regex]::Escape($Separator))[$IDSplitCounter]
+                    ++$IDSplitCounter
                 }
                 foreach ($NumHeader in 0..($HeadersFlatNoSharedCount-1)) {
                     try {
