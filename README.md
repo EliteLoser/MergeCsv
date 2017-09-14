@@ -10,3 +10,7 @@ Online blog documentation: https://www.powershelladmin.com/wiki/Merge_CSV_files_
 It's also published to the PowerShell Gallery: https://www.powershellgallery.com/packages/MergeCsv/
 
 I will add more information here later, but for now check out the online docs which are quite comprehensive.
+
+Here's a screenshot demonstrating some of the more sophisticated features.
+
+![alt tag](/merge-csv-example-github.png)
