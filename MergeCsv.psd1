@@ -12,7 +12,7 @@
 RootModule = 'MergeCsv.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.7'
+ModuleVersion = '1.7.0.1'
 
 # ID used to uniquely identify this module
 GUID = 'b3611e3d-f337-494b-9f16-50b424f8471c'
