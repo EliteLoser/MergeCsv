@@ -9,7 +9,17 @@ Online blog documentation: https://www.powershelladmin.com/wiki/Merge_CSV_files_
 
 It's also published to the PowerShell Gallery: https://www.powershellgallery.com/packages/MergeCsv/
 
-I will add more information here later, but for now check out the online docs which are quite comprehensive.
+If you have PSv5 or newer (default in Win 10 / Server 2016), you can install with:
+```
+Install-Module -Name MergeCsv
+```
+
+or for your user only (no elevation required):
+```
+Install-Module -Name MergeCsv -Scope CurrentUser
+```
+
+I will add more information here later, but for now check out the online docs which are comprehensive.
 
 Here's a screenshot demonstrating some of the more sophisticated features.
 
