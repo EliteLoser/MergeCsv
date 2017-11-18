@@ -25,6 +25,9 @@ Describe "Merge-Csv" {
         }, [PSCustomObject] @{
             Username = "Jane"
             Email = "jane@example.com"
+        }, [PSCustomObject] @{
+            Username = "Janet"
+            Email = "janet@maintexample.com"
         })
         $DepartmentObjects = @([PSCustomObject] @{
             Username = "John"
@@ -32,11 +35,14 @@ Describe "Merge-Csv" {
         }, [PSCustomObject] @{
             Username = "Jane"
             Department = "IT"
+        }, [PSCustomObject] @{
+            Username = "Janet"
+            Department = "Maintenance"
         })
         (Merge-Csv -InputObject $EmailObjects, $DepartmentObjects -Identity Username |
             Sort-Object Username |
             ConvertTo-Json -Depth 100 -Compress) -eq `
-            '[{"Username":"Jane","Email":"jane@example.com","Department":"IT"},{"Username":"John","Email":"john@example.com","Department":"HR"}]' |
+            '[{"Username":"Jane","Email":"jane@example.com","Department":"IT"},{"Username":"Janet","Email":"janet@maintexample.com","Department":"Maintenance"},{"Username":"John","Email":"john@example.com","Department":"HR"}]' |
             Should -Be $True
     }
 }
