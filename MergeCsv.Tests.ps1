@@ -126,10 +126,12 @@ Describe "Merge-Csv" {
         }
         
         (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated"
         # Check in reverse order.
         (Merge-Csv -InputObject $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated"
         
     }
 
@@ -151,10 +153,13 @@ Describe "Merge-Csv" {
         }
         
         (Merge-Csv -InputObject $Object1, $Object2 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
+        
         # Check in reverse order.
         (Merge-Csv -InputObject $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
         
     }
 
@@ -182,15 +187,18 @@ Describe "Merge-Csv" {
         
         # Check that position 3 is reported correctly.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 3: Repeated, a"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 3: Repeated, a"
         
         # Check as second.
         (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
         
         # Check as first.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
+        $Warnings.Message |
+            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
         
     }
 
