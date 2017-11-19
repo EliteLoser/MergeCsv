@@ -214,15 +214,15 @@ Describe "Merge-Csv" {
         
         # Check position 1.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Identifying column entry '[^']+' was not found in all CSV data objects/files. Found in object/file no.: 1"
+        $Warnings | Should -Match "Identifying column entry '$($Object1[1].Username)' was not found in all CSV data objects/files. Found in object/file no.: 1"
         
         # Check position 2.
         (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Identifying column entry '[^']+' was not found in all CSV data objects/files. Found in object/file no.: 2"
+        $Warnings | Should -Match "Identifying column entry '$($Object1[1].Username)' was not found in all CSV data objects/files. Found in object/file no.: 2"
         
         # Check position 3.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
-        $Warnings | Should -Match "Identifying column entry '[^']+' was not found in all CSV data objects/files. Found in object/file no.: 3"
+        $Warnings | Should -Match "Identifying column entry '$($Object1[1].Username)' was not found in all CSV data objects/files. Found in object/file no.: 3"
         
         # Check two scenarios where
         $Object2 = @([PSCustomObject] @{
