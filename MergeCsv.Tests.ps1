@@ -307,6 +307,34 @@ Describe "Merge-Csv" {
             Should -Match "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 3"
         
+        $Object2 = @([PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            food = "bar33"
+        }, [PSCustomObject] @{
+            Username = "MissingInTheOther"
+            ID2 = "m"
+            food = "bar3"
+        })
+        
+        # Check when it's missing in position 1.
+        (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$(($Object1[1].Username,
+                $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 2, 3"
+        
+        # Check when it's missing in position 2.
+        (Merge-Csv -InputObject $Object2, $Object3, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$(($Object1[1].Username,
+                $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 1, 3"
+        
+        # Check when it's missing in position 3.
+        (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$(($Object1[1].Username,
+                $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 1, 2"
+        
     }
     
 }
