@@ -22,16 +22,16 @@ Describe "Merge-Csv" {
     function InternalTestPathCSV {
         [CmdletBinding()]
         Param([String] $FilePath)
-        if (-not (Test-Path -Path "$MyScriptRoot\$FilePath" -PathType Leaf)) {
-            if (-not (Test-Path -Path "$MyScriptRoot\template-csvs\$FilePath" -PathType Leaf)) {
+        if (-not (Test-Path -Path "$MyScriptRoot\template-csvs\$FilePath" -PathType Leaf)) {
+            if (-not (Test-Path -Path "$MyScriptRoot\$FilePath" -PathType Leaf)) {
                 throw "'$FilePath' isn't in the same directory as the test script or in a subfolder called 'template-csvs'."
             }
             else {
-                "$MyScriptRoot\template-csvs\$FilePath"
+                "$MyScriptRoot\$FilePath"
             }
         }
         else {
-            "$MyScriptRoot\$FilePath"
+            "$MyScriptRoot\template-csvs\$FilePath"
         }
     }
     
@@ -81,7 +81,7 @@ Describe "Merge-Csv" {
             ForEach-Object {
                 InternalTestPathCSV -FilePath $_
             }
-        #Write-Verbose ("`n" + ($FirstPath, $SecondPath, $ThirdPath -join "`n")) -Verbose
+        Write-Verbose ("`n" + ($FirstPath, $SecondPath, $ThirdPath -join "`n")) #-Verbose
         ((Merge-Csv -Path $FirstPath, $SecondPath, $ThirdPath -Identity ComputerName, Uh -WarningVariable Warnings |
             Sort-Object -Property ComputerName, Uh |
             ConvertTo-Json -Depth 100 -Compress) 3> $null) -eq `
