@@ -111,7 +111,7 @@ Describe "Merge-Csv" {
 
     }
     
-    It "Correctly warns about duplicates, without -AllowDuplicates" {
+    It "Warns about duplicates" {
         
         $Object1 = @([PSCustomObject] @{
             Username = "Repeated"
@@ -133,7 +133,7 @@ Describe "Merge-Csv" {
         
     }
 
-    It "Correctly warns about duplicates with two ID fields, without -AllowDuplicates" {
+    It "Warns about duplicates with two ID fields" {
         
         $Object1 = @([PSCustomObject] @{
             Username = "Repeated"
@@ -158,7 +158,7 @@ Describe "Merge-Csv" {
         
     }
 
-    It "Correctly warns about duplicates with two ID fields and >2 objects" {
+    It "Warns about duplicates with two ID fields and >2 objects" {
         
         $Object1 = @([PSCustomObject] @{
             Username = "Repeated"
@@ -180,7 +180,7 @@ Describe "Merge-Csv" {
             baz = "boo"
         }
         
-        # Check position 3 is reported correctly.
+        # Check that position 3 is reported correctly.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 3: Repeated, a"
         
@@ -194,4 +194,105 @@ Describe "Merge-Csv" {
         
     }
 
+    It "Warns about a missing ID property in one or more of three objects" {
+        
+        $Object1 = @([PSCustomObject] @{
+            Username = "Repeated"
+            foo = "bar"
+        }, [PSCustomObject] @{
+            Username = "MissingInTheOther"
+            foo = "bar2"
+        })
+        $Object2 = [PSCustomObject] @{
+            Username = "Repeated"
+            bar = "foo"
+        }
+        $Object3 = [PSCustomObject] @{
+            Username = "Repeated"
+            baz = "boo"
+        }
+        
+        # Check position 1.
+        (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Identifying column entry '[^']+' was not found in all CSV data objects/files. Found in object/file no.: 1"
+        
+        # Check position 2.
+        (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Identifying column entry '[^']+' was not found in all CSV data objects/files. Found in object/file no.: 2"
+        
+        # Check position 3.
+        (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Identifying column entry '[^']+' was not found in all CSV data objects/files. Found in object/file no.: 3"
+        
+        # Check two scenarios where
+        $Object2 = @([PSCustomObject] @{
+            Username = "Repeated"
+            bar = "foo"
+        }, [PSCustomObject] @{
+            Username = "MissingInTheOther"
+            bar = "foo2"
+        })
+        
+        # Check when it's missing in position 1.
+        (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$($Object2[1].Username
+                )' was not found in all CSV data objects/files. Found in object/file no.: 2, 3"
+        
+        # Check when it's missing in position 2.
+        (Merge-Csv -InputObject $Object2, $Object3, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$($Object1[1].Username
+                )' was not found in all CSV data objects/files. Found in object/file no.: 1, 3"
+        
+        # Check when it's missing in position 3.
+        (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$($Object1[1].Username
+                )' was not found in all CSV data objects/files. Found in object/file no.: 1, 2"
+        
+    }
+    
+    It "Warns about a missing, combined ID property (two properties) in one or more of three objects" {
+        
+        $Object1 = @([PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            foo = "bar"
+        }, [PSCustomObject] @{
+            Username = "MissingInTheOther"
+            ID2 = "m"
+            foo = "bar2"
+        })
+        $Object2 = [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            bar = "foo"
+        }
+        $Object3 = [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            baz = "boo"
+        }
+        
+        # Check position 1.
+        (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$(($Object1[1].Username,
+                $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 1"
+        
+        # Check position 2.
+        (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$(($Object1[1].Username,
+                $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 2"
+        
+        # Check position 3.
+        (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings.Message |
+            Should -Match "Identifying column entry '$(($Object1[1].Username,
+                $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 3"
+        
+    }
+    
 }
