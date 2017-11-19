@@ -36,6 +36,7 @@ Describe "Merge-Csv" {
     }
     
     It "Merges two simple objects with three IDs correctly" {
+        
         $EmailObjects = @([PSCustomObject] @{
             Username = "John"
             Email = "john@example.com"
@@ -61,9 +62,11 @@ Describe "Merge-Csv" {
             ConvertTo-Json -Depth 100 -Compress) 3> $null) -eq `
             '[{"Username":"Jane","Email":"jane@example.com","Department":"IT"},{"Username":"Janet","Email":"janet@maintexample.com","Department":"Maintenance"},{"Username":"John","Email":"john@example.com","Department":"HR"}]' |
             Should -Be $True
+    
     }
 
     It "Merges two simple CSV files with three IDs correctly" {
+        
         $FirstPath, $SecondPath = "simplecsv1.csv", "simplecsv2.csv" |
             ForEach-Object {
                 InternalTestPathCSV -FilePath $_
@@ -74,9 +77,11 @@ Describe "Merge-Csv" {
             ConvertTo-Json -Depth 100 -Compress) -eq `
             '[{"Username":"Jane","Email":"jane@example.com","Department":"IT"},{"Username":"Janet","Email":"janet@maintexample.com","Department":"Maintenance"},{"Username":"John","Email":"john@example.com","Department":"HR"}]' |
             Should -Be $True
+    
     }
 
     It "Merges three somewhat complex CSV files with two IDs properly" {
+        
         $FirstPath, $SecondPath, $ThirdPath = "csv1.csv", "csv2.csv", "csv3.csv" |
             ForEach-Object {
                 InternalTestPathCSV -FilePath $_
@@ -88,9 +93,11 @@ Describe "Merge-Csv" {
         '[{"ComputerName":"ServerA","Uh":"UhA","OSFamily":"Windows","Env":"Production","PSVer":"5.1","OrderFile3":"1"},{"ComputerName":"ServerB","Uh":"UhB","OSFamily":"Windows","Env":"Test","PSVer":"5.1","OrderFile3":"5"}]' |
             Should -Be $True
         $Warnings.Count | Should -Be 9
+
     }
 
     It "Merges three somewhat complex CSV files with two IDs properly, with -AllowDuplicates" {
+        
         $FirstPath, $SecondPath, $ThirdPath = "csv1.csv", "csv2.csv", "csv3.csv" |
             ForEach-Object {
                 InternalTestPathCSV -FilePath $_
@@ -101,9 +108,11 @@ Describe "Merge-Csv" {
         '[{"ComputerName":"ServerA","Uh":"UhA","OSFamily":"Windows","Env":"Production","PSVer":"5.1","OrderFile3":"1"},{"ComputerName":"ServerA","Uh":"UhA","OSFamily":"Linux","Env":"Test","PSVer":"6.0","OrderFile3":"2"},{"ComputerName":"ServerA","Uh":"UhA","OSFamily":null,"Env":"Production","PSVer":"3.0","OrderFile3":"3"},{"ComputerName":"ServerA","Uh":"UhA","OSFamily":null,"Env":null,"PSVer":null,"OrderFile3":"4"},{"ComputerName":"ServerB","Uh":"UhB","OSFamily":"Windows","Env":"Test","PSVer":"5.1","OrderFile3":"5"},{"ComputerName":"ServerB","Uh":"UhB","OSFamily":"Linux","Env":"Legacy","PSVer":"6.0","OrderFile3":"6"}]' |
             Should -Be $True
         $Warnings.Count | Should -Be 0
+
     }
     
     It "Correctly warns about duplicates, without -AllowDuplicates" {
+        
         $Object1 = @([PSCustomObject] @{
             Username = "Repeated"
             foo = "bar"
@@ -125,6 +134,7 @@ Describe "Merge-Csv" {
     }
 
     It "Correctly warns about duplicates with two ID fields, without -AllowDuplicates" {
+        
         $Object1 = @([PSCustomObject] @{
             Username = "Repeated"
             ID2 = "a"
@@ -144,6 +154,37 @@ Describe "Merge-Csv" {
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
         # Check in reverse order.
         (Merge-Csv -InputObject $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
+        
+    }
+
+    It "Correctly warns about duplicates with two ID fields and >2 objects" {
+        
+        $Object1 = @([PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            foo = "bar"
+        }, [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            foo = "barf"
+        })
+        $Object2 = [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            bar = "foo"
+        }
+        $Object3 = [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            baz = "boo"
+        }
+        
+        # Check position 3 is reported correctly.
+        (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 3: Repeated, a"
+        # Check in other order.
+        (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
         
     }
