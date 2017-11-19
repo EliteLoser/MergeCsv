@@ -103,7 +103,7 @@ Describe "Merge-Csv" {
         $Warnings.Count | Should -Be 0
     }
     
-    It "Correctly warns about duplicates without -AllowDuplicates" {
+    It "Correctly warns about duplicates, without -AllowDuplicates" {
         $Object1 = @([PSCustomObject] @{
             Username = "Repeated"
             foo = "bar"
@@ -119,10 +119,32 @@ Describe "Merge-Csv" {
         (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated"
         # Check in reverse order.
-        $Object1, $Object2 = $Object2, $Object1
-        Remove-Variable -Name TempObject -ErrorAction SilentlyContinue
-        (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        (Merge-Csv -InputObject $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated"
+        
+    }
+
+    It "Correctly warns about duplicates with two ID fields, without -AllowDuplicates" {
+        $Object1 = @([PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            foo = "bar"
+        }, [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            foo = "barf"
+        })
+        $Object2 = [PSCustomObject] @{
+            Username = "Repeated"
+            ID2 = "a"
+            bar = "foo"
+        }
+        
+        (Merge-Csv -InputObject $Object1, $Object2 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
+        # Check in reverse order.
+        (Merge-Csv -InputObject $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
         
     }
 
