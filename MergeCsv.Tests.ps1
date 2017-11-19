@@ -8,7 +8,7 @@ Param()
 
 Import-Module -Name Pester -ErrorAction Stop
 # Putting this in the wild...
-Remove-Module -Name MergeCsv -ErrorAction Stop
+Remove-Module -Name MergeCsv -ErrorAction SilentlyContinue
 Import-Module -Name MergeCsv -ErrorAction Stop
 
 # Doing this instead, at least for myself, to avoid having to copy files to
