@@ -103,4 +103,28 @@ Describe "Merge-Csv" {
         $Warnings.Count | Should -Be 0
     }
     
+    It "Correctly warns about duplicates without -AllowDuplicates" {
+        $Object1 = @([PSCustomObject] @{
+            Username = "Repeated"
+            foo = "bar"
+        }, [PSCustomObject] @{
+            Username = "Repeated"
+            foo = "barf"
+        })
+        $Object2 = [PSCustomObject] @{
+            Username = "Repeated"
+            bar = "foo"
+        }
+        
+        (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated"
+        $TempObject = $Object2
+        $Object2 = $Object1
+        $Object1 = $TempObject
+        Remove-Variable -Name TempObject -ErrorAction SilentlyContinue
+        (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
+        $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated"
+        
+    }
+
 }
