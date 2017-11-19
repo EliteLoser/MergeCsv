@@ -9,29 +9,29 @@ Import-Module -Name Pester -ErrorAction Stop
 # Putting this in the wild...
 Remove-Module -Name MergeCsv -ErrorAction SilentlyContinue
 Import-Module -Name MergeCsv -ErrorAction Stop
-$MyScriptRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
+#$MyScriptRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
 
 # Doing this instead, at least for myself, to avoid having to copy files to
 # the profile/computer PowerShell modules directory each time...
-#Copy-Item -Path ..\MergeCsv.psm1 -Destination $MyScriptRoot\MergeCsv.ps1
-###Move-Item -Path .\MergeCsv.psm1 -Destination "$MyScriptRoot\MergeCsv.ps1" -Force
-#. "$MyScriptRoot\MergeCsv.ps1"
+#Copy-Item -Path ..\MergeCsv.psm1 -Destination $PSScriptRoot\MergeCsv.ps1
+###Move-Item -Path .\MergeCsv.psm1 -Destination "$PSScriptRoot\MergeCsv.ps1" -Force
+#. "$PSScriptRoot\MergeCsv.ps1"
 
 Describe "Merge-Csv" {
     
     function InternalTestPathCSV {
         [CmdletBinding()]
         Param([String] $FilePath)
-        if (-not (Test-Path -Path "$MyScriptRoot\template-csvs\$FilePath" -PathType Leaf)) {
-            if (-not (Test-Path -Path "$MyScriptRoot\$FilePath" -PathType Leaf)) {
+        if (-not (Test-Path -Path "$PSScriptRoot\template-csvs\$FilePath" -PathType Leaf)) {
+            if (-not (Test-Path -Path "$PSScriptRoot\$FilePath" -PathType Leaf)) {
                 throw "'$FilePath' isn't in the same directory as the test script or in a subfolder called 'template-csvs'."
             }
             else {
-                "$MyScriptRoot\$FilePath"
+                "$PSScriptRoot\$FilePath"
             }
         }
         else {
-            "$MyScriptRoot\template-csvs\$FilePath"
+            "$PSScriptRoot\template-csvs\$FilePath"
         }
     }
     
