@@ -118,9 +118,8 @@ Describe "Merge-Csv" {
         
         (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated"
-        $TempObject = $Object2
-        $Object2 = $Object1
-        $Object1 = $TempObject
+        # Check in reverse order.
+        $Object1, $Object2 = $Object2, $Object1
         Remove-Variable -Name TempObject -ErrorAction SilentlyContinue
         (Merge-Csv -InputObject $Object1, $Object2 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings | Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated"
