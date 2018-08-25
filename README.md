@@ -14,7 +14,7 @@ If you have PSv5 or newer (default in Win 10 / Server 2016), you can install wit
 Install-Module -Name MergeCsv
 ```
 
-or for your user only (no elevation required):
+or for your user only (elevation not required):
 ```
 Install-Module -Name MergeCsv -Scope CurrentUser
 ```
