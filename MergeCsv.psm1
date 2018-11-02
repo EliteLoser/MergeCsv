@@ -200,22 +200,25 @@ function Merge-Csv {
         $Counter++
         foreach ($Column in $Identity) {
             if ($h -notcontains $Column) {
-                $Err "ERROR: [1] Headers in object/file $Counter don't include $Column defined as key for merging. Exiting."
-            	Write-Output $Err
-		Write-Error $Err
-		throw $Err
-            }
+                $ErrMsgId = 1 
+		$ErrMsg = "ERROR: ErrMsgId:$ErrMsgId - Headers in object/file $Counter don't include $Column defined as key for merging. Exiting."
+		Write-Output $ErrMsg
+		Write-Error $ErrMsg
+		throw $ErrMsgId
+           }
         }
     }
     $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Identity -notcontains $_ })
     if ($HeadersFlatNoShared.Count -ne @($HeadersFlatNoShared | Sort-Object -Unique).Count) {
-        $Err = "ERROR: [2] One or more header label(s) in input file is/are not unique. Check input files!"
-        Write-Output $Err
+        $ErrMsgId = 2 
+	$ErrMsg = "ERROR: ErrMsgId:$ErrMsgId -  One or more header label(s) in input file is/are not unique. Check input files!"
+        Write-Output $ErrMsg
         Write-Output "HINT to fix error: remove duplicate headers from an input CSV file. `n \
         Import-Csv it, pass it to Select-Object, and omit the duplicate header(s)/column(s).`n Exiting."
-	Write-Error $Err
-        throw $Err
+	Write-Error $ErrMsg
+        throw $ErrMsgId
     }
+ 
     $SharedColumnHashes = @()
     $SharedColumnCount = $Identity.Count
     $Counter = 0
