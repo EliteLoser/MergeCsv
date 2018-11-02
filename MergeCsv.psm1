@@ -200,14 +200,17 @@ function Merge-Csv {
         $Counter++
         foreach ($Column in $Identity) {
             if ($h -notcontains $Column) {
-                Write-Error "Headers in object/file $Counter don't include $Column. Exiting."
+                Write-Error "<error> Headers in object/file $Counter don't include $Column. Exiting."
                 return
             }
         }
     }
     $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Identity -notcontains $_ })
     if ($HeadersFlatNoShared.Count -ne @($HeadersFlatNoShared | Sort-Object -Unique).Count) {
-        Write-Error "Some headers are shared. Are you just looking for '@(ipcsv csv1) + @(ipcsv csv2) | Export-Csv ...'?`nTo remove duplicate (between the files to merge) headers from a CSV file, Import-Csv it, pass it to Select-Object, and omit the duplicate header(s)/column(s).`nExiting."
+        Write-Error "<error> Some headers are repeated."
+        
+        Write-Output "<hint> to fix remove duplicate (between the files to merge) headers from a CSV file, `n \
+                 Import-Csv it, pass it to Select-Object, and omit the duplicate header(s)/column(s).`n Exiting."
         return
     }
     $SharedColumnHashes = @()
