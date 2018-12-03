@@ -1,13 +1,13 @@
 #requires -version 3
 
- 
+
 <#
 .SYNOPSIS
 Merges an arbitrary amount of CSV files or PowerShell objects based on an ID column or
 several combined ID columns. Works on custom PowerShell objects with the InputObject parameter.
 
 .DESCRIPTION
-Slapping parentheses around Import-Csv like, say, "-InputObject (ipcsv csvfile.csv), $objectHere"
+Putting parentheses around Import-Csv like, say, "-InputObject (ipcsv csvfile.csv), $objectHere"
 is good for a mix of objects and CSV files.
 
 PowerShell version 3 or higher is needed.
@@ -19,7 +19,7 @@ Svendsen Tech
 MIT license.
 
 Online documentation:
-http://www.powershelladmin.com/wiki/Merge_CSV_files_or_PSObjects_in_PowerShell
+https://www.powershelladmin.com/wiki/Merge_CSV_files_or_PSObjects_in_PowerShell
 
 GitHub:
 https://github.com/EliteLoser/MergeCsv/
@@ -175,162 +175,219 @@ function Merge-Csv {
     #      to do right now than keep the silly, presumed unique separator string.
     # v1.7.0.2 - 2017-09-14 - Found a good way to handle multiple IDs with regards to the
     #      presentation aspect! So clever it almost hurts - that's how it feels now anyway.
-    [String[]] $PropertyTypes = @()
-    if ($IncludeAliasProperty) {
-        $PropertyTypes = @("NoteProperty", "AliasProperty")
-    }
-    else {
-        $PropertyTypes = @("NoteProperty")
-    }
-    [PSObject[]] $CsvObjects = @()
-    if ($PSCmdlet.ParameterSetName -eq 'Files') {
-        $CsvObjects = foreach ($File in $Path) {
-            ,@(Import-Csv -Delimiter $Delimiter -Path $File)
+    # v1.7.0.3 - 
+    # v1.7.1 - Polishing. Improving error messages. Boilerplate CmdletBinding code added.
+    begin {
+        [String[]] $PropertyTypes = @()
+        if ($IncludeAliasProperty) {
+            $PropertyTypes = @("NoteProperty", "AliasProperty")
         }
-    }
-    else {
-        $CsvObjects = $InputObject
-    }
-    $Headers = @()
-    foreach ($Csv in $CsvObjects) {
-        $Headers += , @($Csv | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name)
-    }
-    $Counter = 0
-    foreach ($h in $Headers) {
-        $Counter++
-        foreach ($Column in $Identity) {
-            if ($h -notcontains $Column) {
-                Write-Error "Headers in object/file $Counter don't include $Column. Exiting."
-                return
+        else {
+            $PropertyTypes = @("NoteProperty")
+        }
+        [PSObject[]] $CsvObjects = @()
+        if ($PSCmdlet.ParameterSetName -eq 'Files') {
+            $CsvObjects = foreach ($File in $Path) {
+                ,@(Import-Csv -Delimiter $Delimiter -Path $File)
             }
         }
-    }
-    $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Identity -notcontains $_ })
-    if ($HeadersFlatNoShared.Count -ne @($HeadersFlatNoShared | Sort-Object -Unique).Count) {
-        Write-Error "Some headers are shared. Are you just looking for '@(ipcsv csv1) + @(ipcsv csv2) | Export-Csv ...'?`nTo remove duplicate (between the files to merge) headers from a CSV file, Import-Csv it, pass it to Select-Object, and omit the duplicate header(s)/column(s).`nExiting."
-        return
-    }
-    $SharedColumnHashes = @()
-    $SharedColumnCount = $Identity.Count
-    $Counter = 0
-    foreach ($Csv in $CsvObjects) {
-        $SharedColumnHashes += @{}
-        $Csv | ForEach-Object {
-            $CurrentID = $(for ($i = 0; $i -lt $SharedColumnCount; $i++) {
-                $_ | Select-Object -ExpandProperty $Identity[$i] -EA SilentlyContinue
-            }) -join $Separator
-            if (-not $SharedColumnHashes[$Counter].ContainsKey($CurrentID)) {
-                $SharedColumnHashes[$Counter].Add($CurrentID, @($_ | Select-Object -Property $Headers[$Counter]))
+        else {
+            $CsvObjects = $InputObject
+        }
+        $Headers = @()
+        foreach ($Csv in $CsvObjects) {
+            $Headers += , @($Csv | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name)
+        }
+        $Counter = 0
+        foreach ($h in $Headers) {
+            $Counter++
+            foreach ($Column in $Identity) {
+                if ($h -notcontains $Column) {
+                    Write-Error "Error. Check your input. Headers in object/file $Counter don't include the identity header '$Column'. Exiting." `
+                        -ErrorAction Stop
+                    #return
+                }
             }
-            else {
-                if ($AllowDuplicates) {
-                    $SharedColumnHashes[$Counter].$CurrentID += $_ | Select-Object -Property $Headers[$Counter]
+        }
+        $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Identity -notcontains $_ })
+        if ($HeadersFlatNoShared.Count -ne @($HeadersFlatNoShared | Sort-Object -Unique).Count) {
+            Write-Error "Error. Check your input. Some headers are shared aside from the specified ID column(s). You could possibly just be looking for '@(Import-Csv csv1) + @(Import-Csv csv2) | Export-Csv ... merged.csv'.`nTo remove duplicate (between the files or objects to merge) headers from a CSV file, possibly Import-Csv it, pass it to Select-Object and omit the duplicate header(s)/column(s).`nExiting." `
+                -ErrorAction Stop
+            #return
+        }
+    }
+    process {
+        $SharedColumnHashes = @()
+        $SharedColumnCount = $Identity.Count
+        $Counter = 0
+        foreach ($Csv in $CsvObjects) {
+            $SharedColumnHashes += @{}
+            $Csv | ForEach-Object {
+                $CurrentID = $(for ($i = 0; $i -lt $SharedColumnCount; $i++) {
+                    $_ | Select-Object -ExpandProperty $Identity[$i] -EA SilentlyContinue
+                }) -join $Separator
+                if (-not $SharedColumnHashes[$Counter].ContainsKey($CurrentID)) {
+                    $SharedColumnHashes[$Counter].Add($CurrentID, @($_ | Select-Object -Property $Headers[$Counter]))
                 }
                 else {
-                    Write-Warning ("Duplicate identifying (shared column(s) ID) entry found in CSV data/file $($Counter+1): " + ($CurrentID -replace [regex]::Escape($Separator), ', '))
-                }
-            }
-        }
-        $Counter++
-    }
-    $Result = @{}
-    $NotFound = @{}
-    foreach ($Counter in 0..($SharedColumnHashes.Count-1)) {
-        foreach ($InnerCounter in (0..($SharedColumnHashes.Count-1) | Where-Object { $_ -ne $Counter })) {
-            foreach ($Key in $SharedColumnHashes[$Counter].Keys) {
-                Write-Verbose "Key: $Key, Counter: $Counter, InnerCounter: $InnerCounter"
-                $Obj = New-Object -TypeName PSObject
-                if ($SharedColumnHashes[$InnerCounter].ContainsKey($Key)) {
-                    foreach ($Header in $Headers[$InnerCounter] | Where-Object { $Identity -notcontains $_ }) {
-                        Add-Member -InputObject $Obj -MemberType NoteProperty -Name $Header -Value ($SharedColumnHashes[$InnerCounter].$Key | Select-Object $Header)
-                    }
-                }
-                else {
-                    foreach ($Header in $Headers[$Counter]) {
-                        if ($Identity -notcontains $Header) {
-                            Add-Member -InputObject $Obj -MemberType NoteProperty -Name $Header -Value ($SharedColumnHashes[$Counter].$Key | Select-Object $Header)
-                        }
-                    }
-                    if (-not $NotFound.ContainsKey($Key)) {
-                        $NotFound.Add($Key, @($Counter))
+                    if ($AllowDuplicates) {
+                        $SharedColumnHashes[$Counter].$CurrentID += $_ | Select-Object -Property $Headers[$Counter]
                     }
                     else {
-                        $NotFound[$Key] += $Counter
+                        Write-Warning ("Duplicate identifying (shared column(s) ID) entry found in CSV data/file $(
+                            $Counter+1): " + ($CurrentID -replace [regex]::Escape($Separator), ', '))
                     }
+        
                 }
-                if (-not $Result.ContainsKey($Key)) {
-                    $Result.$Key = $Obj
-                }
-                else {
-                    foreach ($Property in @($Obj | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name)) {
-                        if (-not ($Result.$Key | Get-Member -MemberType $PropertyTypes -Name $Property)) {
-                            Add-Member -InputObject $Result.$Key -MemberType NoteProperty -Name $Property -Value $Obj.$Property #-EA SilentlyContinue
+        
+            }
+        
+            $Counter++
+        
+        }
+
+        $Result = @{}
+        $NotFound = @{}
+        
+        foreach ($Counter in 0..($SharedColumnHashes.Count-1)) {
+            
+            foreach ($InnerCounter in (0..($SharedColumnHashes.Count-1) | Where-Object { $_ -ne $Counter })) {
+                
+                foreach ($Key in $SharedColumnHashes[$Counter].Keys) {
+                    
+                    Write-Verbose "Key: $Key, Counter: $Counter, InnerCounter: $InnerCounter"
+                    
+                    $Obj = New-Object -TypeName PSObject
+                    
+                    if ($SharedColumnHashes[$InnerCounter].ContainsKey($Key)) {
+                        
+                        foreach ($Header in $Headers[$InnerCounter] | Where-Object { $Identity -notcontains $_ }) {
+                            
+                            Add-Member -InputObject $Obj -MemberType NoteProperty -Name $Header -Value (
+                                $SharedColumnHashes[$InnerCounter].$Key | Select-Object $Header)
+                            
+                        }
+                        
+                    }
+                    
+                    else {
+                        
+                        foreach ($Header in $Headers[$Counter]) {
+                            
+                            if ($Identity -notcontains $Header) {
+                                
+                                Add-Member -InputObject $Obj -MemberType NoteProperty -Name $Header -Value (
+                                    $SharedColumnHashes[$Counter].$Key | Select-Object $Header)
+                                
+                            }
+                            
+                        }
+                        
+                        if (-not $NotFound.ContainsKey($Key)) {
+                            $NotFound.Add($Key, @($Counter))
+                        }
+                        else {
+                            $NotFound[$Key] += $Counter
                         }
                     }
+                    if (-not $Result.ContainsKey($Key)) {
+                        $Result.$Key = $Obj
+                    }
+                    else {
+                        
+                        foreach ($Property in @($Obj | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name)) {
+                            
+                            if (-not ($Result.$Key | Get-Member -MemberType $PropertyTypes -Name $Property)) {
+                                
+                                Add-Member -InputObject $Result.$Key -MemberType NoteProperty `
+                                    -Name $Property -Value $Obj.$Property #-EA SilentlyContinue
+       
+                            }
+                            
+                        }
+                        
+                    }
+                    
                 }
                 
             }
+        
         }
-    }
-    if ($NotFound) {
-        foreach ($Key in $NotFound.Keys) {
-            Write-Warning "Identifying column entry '$($Key -replace [regex]::Escape($Separator), ', ')' was not found in all CSV data objects/files. Found in object/file no.: $(
-                if ($NotFound.$Key) { ($NotFound.$Key | ForEach-Object { ([int]$_)+1 } | Sort-Object -Unique) -join ', '}
-                elseif ($CsvObjects.Count -eq 2) { '1' }
-                else { 'none' }
-                )"
-        }
-    }
-    #$Global:Result = $Result
-    $Counter = 0
-    [hashtable[]] $SharedHeadersNoDuplicate = $Identity | ForEach-Object {
-        @{n="$($Identity[$Counter])";e=[scriptblock]::Create("(`$_.Name -split ([regex]::Escape('$Separator')))[$Counter]")}
-        $Counter++
-    }
-    [hashtable[]] $HeaderPropertiesNoDuplicate = $HeadersFlatNoShared | ForEach-Object {
-        @{n=$_.ToString(); e=[scriptblock]::Create("`$_.Value.'$_' | Select -ExpandProperty '$_'")}
-    }
-    [int] $HeadersFlatNoSharedCount = $HeadersFlatNoShared.Count
-    # Return results.
-    if (-not $AllowDuplicates) {
-        $Result.GetEnumerator() | Select-Object -Property ($SharedHeadersNoDuplicate + $HeaderPropertiesNoDuplicate)
-    }
-    else {
-        $Result.GetEnumerator() | ForEach-Object {
-            # Latching on support for duplicate objects. Insanely inefficient.
-            # Variable for the count of duplicates we find. Initialize to 1 for each array of PSobjects for each ID.
-            $MaxDuplicateCount = 1
-            foreach ($Title in $_.Value | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name) {
-                $Count = @($_.Value.$Title).Count
-                # find max count for this instance (if at all higher than 1)
-                # duplicates are processed in the order they occur
-                if ($MaxDuplicateCount -lt $Count) {
-                    $MaxDuplicateCount = $Count
-                }
+        
+        if ($NotFound) {
+            foreach ($Key in $NotFound.Keys) {
+                Write-Warning "Identifying column entry '$($Key -replace [regex]::Escape($Separator), ', '
+                    )' was not found in all CSV data objects/files. Found in object/file no.: $(
+                    if ($NotFound.$Key) { ($NotFound.$Key | ForEach-Object { ([int]$_)+1 } | Sort-Object -Unique) -join ', '}
+                    elseif ($CsvObjects.Count -eq 2) { '1' }
+                    else { 'none' }
+                    )"
             }
-            Write-Verbose "Max duplicate count: $MaxDuplicateCount"
-            foreach ($i in 0..($MaxDuplicateCount-1)) {
-                # Add ID(s) once to each object.
-                $Obj = $null
-                $Obj = New-Object -TypeName PSObject
-                $IDSplitCounter = 0
-                foreach ($TempID in $Identity) {
-                    Add-Member -InputObject $Obj -MemberType NoteProperty -Name $TempID -Value @($_.Name -split [Regex]::Escape($Separator))[$IDSplitCounter]
-                    ++$IDSplitCounter
-                }
-                foreach ($NumHeader in 0..($HeadersFlatNoSharedCount-1)) {
-                    try {
-                        $Value = ($_.Value.($HeadersFlatNoShared[$NumHeader]))[$i] | Select-Object -ExpandProperty $HeadersFlatNoShared[$NumHeader]
+        }
+
+        $Counter = 0
+        
+        [HashTable[]] $SharedHeadersNoDuplicate = $Identity | ForEach-Object {
+            @{n="$($Identity[$Counter])";e=[scriptblock]::Create("(`$_.Name -split ([regex]::Escape('$Separator')))[$Counter]")}
+            $Counter++
+        }
+        
+        [HashTable[]] $HeaderPropertiesNoDuplicate = $HeadersFlatNoShared | ForEach-Object {
+            @{n=$_.ToString(); e=[scriptblock]::Create("`$_.Value.'$_' | Select -ExpandProperty '$_'")}
+        }
+        
+        [System.Int32] $HeadersFlatNoSharedCount = $HeadersFlatNoShared.Count
+        
+        # Return results.
+        if (-not $AllowDuplicates) {
+            $Result.GetEnumerator() | Select-Object -Property ($SharedHeadersNoDuplicate + $HeaderPropertiesNoDuplicate)
+        }
+        else {
+
+            $Result.GetEnumerator() | ForEach-Object {
+                
+                # Latching on support for duplicate objects. Insanely inefficient.
+                # Variable for the count of duplicates we find. Initialize to 1 for each array of PSobjects for each ID.
+                $MaxDuplicateCount = 1
+                
+                foreach ($Title in $_.Value | Get-Member -MemberType $PropertyTypes | Select-Object -ExpandProperty Name) {
+                    $Count = @($_.Value.$Title).Count
+                    # find max count for this instance (if at all higher than 1)
+                    # duplicates are processed in the order they occur
+                    if ($MaxDuplicateCount -lt $Count) {
+                        $MaxDuplicateCount = $Count
                     }
-                    catch {
-                        Write-Verbose "Caught out of bounds in array."
-                        $Value = '' #| Select-Object -Property $HeadersFlatNoShared[$NumHeader]
-                    }
-                    Add-Member -InputObject $Obj -MemberType NoteProperty -Name $HeadersFlatNoShared[$NumHeader] -Value $Value
                 }
-                $Obj | Select-Object -Property ($Identity + $HeadersFlatNoShared)
+
+                Write-Verbose "Max duplicate count: $MaxDuplicateCount"
+                
+                foreach ($i in 0..($MaxDuplicateCount-1)) {
+                    
+                    # Add ID(s) once to each object.
+                    $Obj = $null
+                    $Obj = New-Object -TypeName PSObject
+                    $IDSplitCounter = 0
+                    
+                    foreach ($TempID in $Identity) {
+                        Add-Member -InputObject $Obj -MemberType NoteProperty -Name $TempID -Value @(
+                            $_.Name -split [Regex]::Escape($Separator))[$IDSplitCounter]
+                        ++$IDSplitCounter
+                    }
+                    
+                    foreach ($NumHeader in 0..($HeadersFlatNoSharedCount-1)) {
+                        $Value = ($_.Value.($HeadersFlatNoShared[$NumHeader]))[$i] | 
+                            Select-Object -ExpandProperty $HeadersFlatNoShared[$NumHeader]
+                        
+                        Add-Member -InputObject $Obj -MemberType NoteProperty `
+                            -Name $HeadersFlatNoShared[$NumHeader] -Value $Value
+                    }
+                    
+                    $Obj | Select-Object -Property ($Identity + $HeadersFlatNoShared)
+                    
+                }
             }
         }
     }
 }
+
 #Export-ModuleMember -Function Merge-Csv
