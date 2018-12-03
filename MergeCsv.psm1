@@ -12,7 +12,7 @@ is good for a mix of objects and CSV files.
 
 PowerShell version 3 or higher is needed.
 
-Copyright Joakim Borger Svendsen (C) 2014-2017
+Copyright Joakim Borger Svendsen (C) 2014-present
 All rights reserved.
 Svendsen Tech
 
