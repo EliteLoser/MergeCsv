@@ -6,122 +6,124 @@
 # Generated on: 12/12/2017
 #
 # v 1.7.0.3. Doc fixes. Module metadata added (tags, file list).
+#
+# v1.7.1. Polishing. Improving error messages and handling. Boilerplate CmdletBinding code added.
 
 @{
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'MergeCsv.psm1'
+    # Script module or binary module file associated with this manifest.
+    RootModule = 'MergeCsv.psm1'
 
-# Version number of this module.
-ModuleVersion = '1.7.0.3'
+    # Version number of this module.
+    ModuleVersion = '1.7.1'
 
-# Supported PSEditions
-# CompatiblePSEditions = @()
+    # Supported PSEditions
+    # CompatiblePSEditions = @()
 
-# ID used to uniquely identify this module
-GUID = 'b3611e3d-f337-494b-9f16-50b424f8471c'
+    # ID used to uniquely identify this module
+    GUID = 'b3611e3d-f337-494b-9f16-50b424f8471c'
 
-# Author of this module
-Author = 'Joakim Borger Svendsen'
+    # Author of this module
+    Author = 'Joakim Borger Svendsen'
 
-# Company or vendor of this module
-CompanyName = 'Svendsen Tech'
+    # Company or vendor of this module
+    CompanyName = 'Svendsen Tech'
 
-# Copyright statement for this module
-Copyright = '(c) 2014-2017 Joakim Borger Svendsen. Svendsen Tech. All rights reserved.'
+    # Copyright statement for this module
+    Copyright = '(c) 2014-present Joakim Borger Svendsen. Svendsen Tech. All rights reserved.'
 
-# Description of the functionality provided by this module
-Description = 'Use Svendsen Tech''s Merge-Csv function to merge CSV files and/or custom PowerShell objects based one or more shared ID properties. Online documentation here: http://www.powershelladmin.com/wiki/Merge_CSV_files_or_PSObjects_in_PowerShell'
+    # Description of the functionality provided by this module
+    Description = 'Use Svendsen Tech''s Merge-Csv function to merge CSV files and/or custom PowerShell objects based on one or more shared ID properties. Online documentation here: https://github.com/EliteLoser/MergeCsv/ and blog with comprehensive docs here: https://www.powershelladmin.com/wiki/Merge_CSV_files_or_PSObjects_in_PowerShell - Once praised by Jeffrey Snover on Twitter!'
 
-# Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '3.0'
+    # Minimum version of the Windows PowerShell engine required by this module
+    PowerShellVersion = '3.0'
 
-# Name of the Windows PowerShell host required by this module
-# PowerShellHostName = ''
+    # Name of the Windows PowerShell host required by this module
+    # PowerShellHostName = ''
 
-# Minimum version of the Windows PowerShell host required by this module
-# PowerShellHostVersion = ''
+    # Minimum version of the Windows PowerShell host required by this module
+    # PowerShellHostVersion = ''
 
-# Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
-# DotNetFrameworkVersion = ''
+    # Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
+    # DotNetFrameworkVersion = ''
 
-# Minimum version of the common language runtime (CLR) required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
-# CLRVersion = ''
+    # Minimum version of the common language runtime (CLR) required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
+    # CLRVersion = ''
 
-# Processor architecture (None, X86, Amd64) required by this module
-# ProcessorArchitecture = ''
+    # Processor architecture (None, X86, Amd64) required by this module
+    # ProcessorArchitecture = ''
 
-# Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+    # Modules that must be imported into the global environment prior to importing this module
+    # RequiredModules = @()
 
-# Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+    # Assemblies that must be loaded prior to importing this module
+    # RequiredAssemblies = @()
 
-# Script files (.ps1) that are run in the caller's environment prior to importing this module.
-# ScriptsToProcess = @()
+    # Script files (.ps1) that are run in the caller's environment prior to importing this module.
+    # ScriptsToProcess = @()
 
-# Type files (.ps1xml) to be loaded when importing this module
-# TypesToProcess = @()
+    # Type files (.ps1xml) to be loaded when importing this module
+    # TypesToProcess = @()
 
-# Format files (.ps1xml) to be loaded when importing this module
-# FormatsToProcess = @()
+    # Format files (.ps1xml) to be loaded when importing this module
+    # FormatsToProcess = @()
 
-# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-# NestedModules = @()
+    # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
+    # NestedModules = @()
 
-# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Merge-Csv'
+    # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
+    FunctionsToExport = 'Merge-Csv'
 
-# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @()
+    # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
+    CmdletsToExport = @()
 
-# Variables to export from this module
-# VariablesToExport = @()
+    # Variables to export from this module
+    # VariablesToExport = @()
 
-# Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = @()
+    # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+    AliasesToExport = @()
 
-# DSC resources to export from this module
-# DscResourcesToExport = @()
+    # DSC resources to export from this module
+    # DscResourcesToExport = @()
 
-# List of all modules packaged with this module
-# ModuleList = @()
+    # List of all modules packaged with this module
+    # ModuleList = @()
 
-# List of all files packaged with this module
-FileList = @("MergeCsv.psm1", "MergeCsv.psd1")
+    # List of all files packaged with this module
+    FileList = @("MergeCsv.psm1", "MergeCsv.psd1", "MergeCsv.Tests.ps1")
 
-# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-PrivateData = @{
+    # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
+    PrivateData = @{
 
-    PSData = @{
+        PSData = @{
 
-        # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = 'CSV','Object','PSObject','Merge','Join'
+            # Tags applied to this module. These help with module discovery in online galleries.
+            Tags = 'CSV','Object','PSObject','Merge','Join'
 
-        # A URL to the license for this module.
-        # LicenseUri = ''
+            # A URL to the license for this module.
+            # LicenseUri = ''
 
-        # A URL to the main website for this project.
-        # ProjectUri = ''
+            # A URL to the main website for this project.
+            # ProjectUri = ''
 
-        # A URL to an icon representing this module.
-        # IconUri = ''
+            # A URL to an icon representing this module.
+            # IconUri = ''
 
-        # ReleaseNotes of this module
-        # ReleaseNotes = ''
+            # ReleaseNotes of this module
+            ReleaseNotes = 'Polishing. Improving error messages and handling. Boilerplate CmdletBinding code added.'
 
-        # External dependent modules of this module
-        # ExternalModuleDependencies = ''
+            # External dependent modules of this module
+            # ExternalModuleDependencies = ''
 
-    } # End of PSData hashtable
+        } # End of PSData hashtable
     
- } # End of PrivateData hashtable
+     } # End of PrivateData hashtable
 
-# HelpInfo URI of this module
-# HelpInfoURI = ''
+    # HelpInfo URI of this module
+    # HelpInfoURI = ''
 
-# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-# DefaultCommandPrefix = ''
+    # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
+    # DefaultCommandPrefix = ''
 
 }
 
