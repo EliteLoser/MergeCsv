@@ -211,7 +211,7 @@ function Merge-Csv {
         }
         $HeadersFlatNoShared = @($Headers | ForEach-Object { $_ } | Where-Object { $Identity -notcontains $_ })
         if ($HeadersFlatNoShared.Count -ne @($HeadersFlatNoShared | Sort-Object -Unique).Count) {
-            Write-Error "Error. Check your input. Some headers are shared aside from the specified ID column(s). You could possibly just be looking for '@(Import-Csv csv1) + @(Import-Csv csv2) | Export-Csv ... merged.csv'.`nTo remove duplicate (between the files or objects to merge) headers from a CSV file, possibly Import-Csv it, pass it to Select-Object and omit the duplicate header(s)/column(s).`nExiting." `
+            Write-Error "Error. Check your input. Some headers are shared aside from the specified ID header(s). You could possibly just be looking for '@(Import-Csv csv1) + @(Import-Csv csv2) | Export-Csv ... merged.csv'.`nTo remove duplicate headers between the files or objects to merge, possibly Import-Csv it, pass it to Select-Object and omit the duplicate header(s)/column(s).`nExiting." `
                 -ErrorAction Stop
             #return
         }
