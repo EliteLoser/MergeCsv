@@ -8,6 +8,8 @@
 # v 1.7.0.3. Doc fixes. Module metadata added (tags, file list).
 #
 # v1.7.1. Polishing. Improving error messages and handling. Boilerplate CmdletBinding code added.
+# v2.0.0 - Same as 1.7.1. Using a new major version because of potentially breaking changes
+#          in error handling.
 
 @{
 
@@ -15,7 +17,7 @@
     RootModule = 'MergeCsv.psm1'
 
     # Version number of this module.
-    ModuleVersion = '1.7.1'
+    ModuleVersion = '2.0.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -110,7 +112,7 @@
             # IconUri = ''
 
             # ReleaseNotes of this module
-            ReleaseNotes = 'Polishing. Improving error messages and handling. Boilerplate CmdletBinding code added.'
+            ReleaseNotes = 'Polishing. Improving error messages and handling. Boilerplate CmdletBinding code added. Possibly breaking changes in error handling call for a new major version number.'
 
             # External dependent modules of this module
             # ExternalModuleDependencies = ''
@@ -126,4 +128,3 @@
     # DefaultCommandPrefix = ''
 
 }
-
