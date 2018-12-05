@@ -6,16 +6,19 @@ Param()
 # Author: Joakim Borger Svendsen
 
 Import-Module -Name Pester -ErrorAction Stop
+
 # Putting this in the wild...
 Remove-Module -Name MergeCsv -ErrorAction SilentlyContinue
-Import-Module -Name MergeCsv -ErrorAction Stop
+#Import-Module -Name MergeCsv -ErrorAction Stop
+
 #$MyScriptRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent
 
 # Doing this instead, at least for myself, to avoid having to copy files to
 # the profile/computer PowerShell modules directory each time...
-#Copy-Item -Path ..\MergeCsv.psm1 -Destination $PSScriptRoot\MergeCsv.ps1
-###Move-Item -Path .\MergeCsv.psm1 -Destination "$PSScriptRoot\MergeCsv.ps1" -Force
-#. "$PSScriptRoot\MergeCsv.ps1"
+Import-Module .\MergeCsv.psm1 -Force
+
+#Copy-Item -Path .\MergeCsv.psm1 -Destination .\MergeCsv.ps1
+#. .\MergeCsv.ps1
 
 Describe "Merge-Csv" {
     
@@ -154,12 +157,12 @@ Describe "Merge-Csv" {
         
         (Merge-Csv -InputObject $Object1, $Object2 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
+            Should -BeLike "Duplicate identifying (shared column(s) ID) entry found in CSV data/file 1: Repeated, a"
         
         # Check in reverse order.
         (Merge-Csv -InputObject $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
+            Should -BeLike "Duplicate identifying (shared column(s) ID) entry found in CSV data/file 2: Repeated, a"
         
     }
 
@@ -188,17 +191,17 @@ Describe "Merge-Csv" {
         # Check that position 3 is reported correctly.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 3: Repeated, a"
+            Should -BeLike "Duplicate identifying (shared column(s) ID) entry found in CSV data/file 3: Repeated, a"
         
         # Check as second.
         (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 2: Repeated, a"
+            Should -BeLike "Duplicate identifying (shared column(s) ID) entry found in CSV data/file 2: Repeated, a"
         
         # Check as first.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Duplicate identifying \(shared column\(s\) ID\) entry found in CSV data/file 1: Repeated, a"
+            Should -BeLike "Duplicate identifying (shared column(s) ID) entry found in CSV data/file 1: Repeated, a"
         
     }
 
@@ -223,19 +226,19 @@ Describe "Merge-Csv" {
         # Check position 1.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$($Object1[1].Username
+            Should -BeLike "Identifying column entry '$($Object1[1].Username
                 )' was not found in all CSV data objects/files. Found in object/file no.: 1"
         
         # Check position 2.
         (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$($Object1[1].Username
+            Should -BeLike "Identifying column entry '$($Object1[1].Username
                 )' was not found in all CSV data objects/files. Found in object/file no.: 2"
         
         # Check position 3.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$($Object1[1].Username
+            Should -BeLike "Identifying column entry '$($Object1[1].Username
                 )' was not found in all CSV data objects/files. Found in object/file no.: 3"
         
         # Check two scenarios where
@@ -250,19 +253,19 @@ Describe "Merge-Csv" {
         # Check when it's missing in position 1.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$($Object2[1].Username
+            Should -BeLike "Identifying column entry '$($Object2[1].Username
                 )' was not found in all CSV data objects/files. Found in object/file no.: 2, 3"
         
         # Check when it's missing in position 2.
         (Merge-Csv -InputObject $Object2, $Object3, $Object1 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$($Object1[1].Username
+            Should -BeLike "Identifying column entry '$($Object1[1].Username
                 )' was not found in all CSV data objects/files. Found in object/file no.: 1, 3"
         
         # Check when it's missing in position 3.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$($Object1[1].Username
+            Should -BeLike "Identifying column entry '$($Object1[1].Username
                 )' was not found in all CSV data objects/files. Found in object/file no.: 1, 2"
         
     }
@@ -292,19 +295,19 @@ Describe "Merge-Csv" {
         # Check position 1.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$(($Object1[1].Username,
+            Should -BeLike "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 1"
         
         # Check position 2.
         (Merge-Csv -InputObject $Object2, $Object1, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$(($Object1[1].Username,
+            Should -BeLike "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 2"
         
         # Check position 3.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$(($Object1[1].Username,
+            Should -BeLike "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 3"
         
         $Object2 = @([PSCustomObject] @{
@@ -320,19 +323,19 @@ Describe "Merge-Csv" {
         # Check when it's missing in position 1.
         (Merge-Csv -InputObject $Object3, $Object2, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$(($Object1[1].Username,
+            Should -BeLike "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 2, 3"
         
         # Check when it's missing in position 2.
         (Merge-Csv -InputObject $Object2, $Object3, $Object1 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$(($Object1[1].Username,
+            Should -BeLike "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 1, 3"
         
         # Check when it's missing in position 3.
         (Merge-Csv -InputObject $Object1, $Object2, $Object3 -Identity Username, ID2 -WarningVariable Warnings) 3> $null | Out-Null
         $Warnings.Message |
-            Should -Match "Identifying column entry '$(($Object1[1].Username,
+            Should -BeLike "Identifying column entry '$(($Object1[1].Username,
                 $Object1[1].ID2) -join ', ')' was not found in all CSV data objects/files. Found in object/file no.: 1, 2"
         
     }
